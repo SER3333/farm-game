@@ -1,0 +1,38 @@
+services:
+  backend:
+    build: ./backend
+    container_name: farm_game_backend
+    command: python manage.py runserver 0.0.0.0:8000
+    volumes:
+      - ./backend:/app
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+
+  frontend:
+    build: ./frontend
+    container_name: farm_game_frontend
+    command: npm run dev -- --host 0.0.0.0
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    ports:
+      - "5173:5173"
+    depends_on:
+      - backend
+
+  db:
+    image: postgres:17
+    container_name: farm_game_db
+    environment:
+      POSTGRES_DB: farm_game
+      POSTGRES_USER: farm_user
+      POSTGRES_PASSWORD: farm_password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+volumes:
+  postgres_data:
