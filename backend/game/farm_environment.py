@@ -92,7 +92,11 @@ def initialize_farm_environment(farm):
 
     location = get_location_data(latitude, longitude)
     weather_location = get_weather_location_data(latitude, longitude)
-    soil = get_soil_data(latitude, longitude)
+    soil = get_soil_data(
+        latitude,
+        longitude,
+        farm.climate_zone,
+    )
 
     farm.country = location["country"]
     farm.region = location["region"]
@@ -102,6 +106,7 @@ def initialize_farm_environment(farm):
     farm.natural_soil_type = soil.soil_type
     farm.natural_soil_ph = soil.ph
     farm.natural_soil_fertility = soil.fertility
+    farm.natural_soil_organic_matter = soil.organic_matter
     farm.natural_soil_moisture = soil.moisture
     farm.natural_nitrogen = soil.nitrogen
     farm.natural_phosphorus = soil.phosphorus
@@ -122,6 +127,7 @@ def initialize_farm_environment(farm):
             "natural_phosphorus",
             "natural_potassium",
             "soil_data_source",
+            "natural_soil_organic_matter",
         ]
     )
 

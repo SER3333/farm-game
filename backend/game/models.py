@@ -92,6 +92,10 @@ class Farm(models.Model):
         default=50.0
     )
 
+    natural_soil_organic_matter = models.FloatField(
+        default=50.0
+    )
+
     soil_data_source = models.CharField(
         max_length=50,
         blank=True
