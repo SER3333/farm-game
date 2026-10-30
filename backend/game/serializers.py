@@ -1,5 +1,6 @@
 from rest_framework import serializers
-from .models import GameWorld, Farm
+from django.db import transaction
+from .models import GameWorld, Farm, Plot
 from .climate import get_hemisphere, get_climate_zone
 from .farm_environment import initialize_farm_environment
 
@@ -16,7 +17,26 @@ class GameWorldSerializer(serializers.ModelSerializer):
             'world_seed',
         ]
 
+class PlotSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Plot
+        fields = [
+            "id",
+            "name",
+            "soil_type",
+            "ph",
+            "nitrogen",
+            "phosphorus",
+            "potassium",
+            "organic_matter",
+            "moisture",
+            "temperature",
+            "drainage",
+            "fertility",
+        ]
+
 class FarmCreateSerializer(serializers.ModelSerializer):
+    plots = PlotSerializer(many=True, read_only=True)
     class Meta:
         model = Farm
         fields = [
@@ -40,6 +60,7 @@ class FarmCreateSerializer(serializers.ModelSerializer):
             "natural_potassium",
             "soil_data_source",
             "created_at",
+            "plots",
         ]
 
         read_only_fields = [
@@ -76,6 +97,7 @@ class FarmCreateSerializer(serializers.ModelSerializer):
             )
         return value
 
+
     def create(self, validated_data):
         owner = validated_data.pop("owner")
 
@@ -88,11 +110,44 @@ class FarmCreateSerializer(serializers.ModelSerializer):
             longitude,
         )
 
-        farm = Farm.objects.create(
-            owner=owner,
-            **validated_data,
-        )
+        # Створюємо ферму та її першу ділянку
+        # як одну операцію бази даних.
+        with transaction.atomic():
 
-        initialize_farm_environment(farm)
+            farm = Farm.objects.create(
+                owner=owner,
+                **validated_data,
+            )
+
+            # Отримуємо географічні та ґрунтові дані.
+            initialize_farm_environment(farm)
+
+            # Створюємо першу земельну ділянку.
+            Plot.objects.create(
+                farm=farm,
+                name="Початкова ділянка",
+
+                soil_type=farm.natural_soil_type or "loam",
+
+                ph=(
+                    farm.natural_soil_ph
+                    if farm.natural_soil_ph is not None
+                    else 6.5
+                ),
+
+                nitrogen=farm.natural_nitrogen,
+                phosphorus=farm.natural_phosphorus,
+                potassium=farm.natural_potassium,
+
+                organic_matter=farm.natural_soil_organic_matter,
+
+                moisture=farm.natural_soil_moisture,
+
+                fertility=farm.natural_soil_fertility,
+
+                # Початкові ігрові значення.
+                temperature=15.0,
+                drainage=50.0,
+            )
 
         return farm
